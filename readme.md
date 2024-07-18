@@ -48,9 +48,9 @@ Ensure each user has a `workspace_id` in the `app_metadata` JSONB. Update this f
 
 ```javascript
 const supabaseServiceRoleInstance = createClient(SUPABASE_API_URL, SERVICE_ROLE_KEY, {
-	db: {
-		schema: "base"
-	}
+  db: {
+    schema: "base"
+  }
 }) 
 await supabaseServiceRoleInstance.auth.admin.updateUserById(userId, {
   app_metadata: {
