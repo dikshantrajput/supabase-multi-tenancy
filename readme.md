@@ -61,7 +61,7 @@ await supabaseServiceRoleInstance.auth.admin.updateUserById(userId, {
 
 ## Adding New Tables
 
-When creating new tables, follow this (docs/new-table.md)[guide] for implementing appropriate RLS policies to maintain data isolation and access control.
+When creating new tables, follow this [guide](docs/new-table.md) for implementing appropriate RLS policies to maintain data isolation and access control.
 
 ## Roadmap
 
