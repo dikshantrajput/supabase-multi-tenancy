@@ -1,0 +1,1 @@
+Supabase multi tenancy setup
