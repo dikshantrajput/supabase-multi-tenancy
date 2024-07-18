@@ -1,9 +1,4 @@
-# README: RLS Policies and Functions
-
-This document outlines the Row Level Security (RLS) policies and related functions implemented in the `base` schema to manage permissions and access control for users, workspaces, and workspace-related data in a PostgreSQL database. These policies leverage PostgreSQL's RLS feature to ensure secure and isolated data access based on user permissions.
-
-Schema:
-![schema](assets/schema.png)
+# RLS Policies and Functions
 
 
 ## Function: `base.user_has_permissions`
@@ -197,25 +192,4 @@ USING (true);
 
 These policies ensure that only authenticated users with the appropriate permissions can access and modify data in the `workspaces`, `users`, `workspace_users`, and `workspace_user_permissions` tables. The `user_has_permissions` function is used extensively to verify user permissions dynamically, providing a robust and flexible access control mechanism.
 
-
-
-
-<!-- Steps to run migrations in your supabase project -->
-1. `supabase login`
-1. `supabase link`
-Choose your project
-`supabase db reset --linked`
-
-
-<!-- You need to make sure 1 thing that whenever you create a user, that should always be having workspace_id in app_metadata jsonb -->
-<!-- You can do it using update from admin side on creating user -->
-<!-- await supabaseAdminAuthInstance.updateUserById(userId, {
-  app_metadata: {
-    org_id: orgId
-  },
-}); -->
-
-
-
-<!-- TODO: adding single user to multiple organizations -->
 
