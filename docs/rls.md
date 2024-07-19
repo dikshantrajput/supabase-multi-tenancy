@@ -1,195 +1,227 @@
-# RLS Policies and Functions
+# Database Policies and Functions README
 
+This document explains the database functions and policies implemented for managing access control and permissions in our application.
 
-## Function: `base.user_has_permissions`
+## Table of Contents
 
-The `user_has_permissions` function checks if a user has the required permissions.
+1. [Functions](#functions)
+   - [user_has_permissions](#function-user_has_permissions)
+2. [Policies](#policies)
+   - [Workspaces Policies](#workspaces-policies)
+   - [Users Policies](#users-policies)
+   - [Workspace Users Policies](#workspace-users-policies)
+   - [Workspace User Permissions Policies](#workspace-user-permissions-policies)
 
-### Definition
+## Functions
+
+### Function: user_has_permissions
+
+This function checks if a user has the requested permissions based on their JWT token.
+
 ```sql
 CREATE OR REPLACE FUNCTION base.user_has_permissions(requested_permissions TEXT[])
 RETURNS boolean
 LANGUAGE plpgsql SECURITY DEFINER STABLE
 AS $$
 DECLARE
-    user_permissions JSONB;
+ user_permissions JSONB;
 BEGIN
-    -- Get user permissions from JWT
-    user_permissions := (auth.jwt() ->> 'user_permissions')::jsonb;
-    
-    -- Return false if user_permissions is null
-    IF user_permissions IS NULL THEN
-        RETURN false;
-    END IF;
-
-    -- Check if any requested permission exists in user permissions
-    RETURN EXISTS (
-        SELECT 1
-        FROM jsonb_array_elements_text(user_permissions) AS user_permission
-        WHERE user_permission = ANY(requested_permissions)
-    );
+  -- Get user permissions from JWT
+  user_permissions := (auth.jwt() ->> 'user_permissions')::jsonb;
+  -- Return false if user_permissions is null
+  IF user_permissions IS NULL THEN
+    RETURN false;
+  END IF;
+  -- Check if any requested permission exists in user permissions
+  RETURN EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements_text(user_permissions) AS user_permission
+    WHERE user_permission = ANY(requested_permissions)
+  );
 END;
 $$;
 ```
 
 ## Policies
 
-### Workspaces
+### Workspaces Policies
 
-#### `workspace isolation policy`
-Restricts access to workspaces based on the workspace ID in the JWT.
+#### Workspace Isolation Policy
 
-```sql
-CREATE POLICY "workspace isolation policy"
-ON base.workspaces
-AS RESTRICTIVE
-TO authenticated
-USING (id = (((SELECT auth.jwt())  -> 'app_metadata')::jsonb ->> 'workspace_id')::uuid);
-```
-
-#### `select for workspaces`
-Allows users with the `workspaces.read` permission to select from the `workspaces` table.
-
-```sql
-CREATE POLICY "select for workspaces"
-ON base.workspaces
-AS PERMISSIVE
-FOR SELECT
-TO authenticated
-USING (
-  (SELECT base.user_has_permissions(ARRAY['workspaces.read'::text]) AS user_has_permissions)
-);
-```
-
-#### `update for workspaces`
-Allows users with the `workspaces.update` permission to update the `workspaces` table.
-
-```sql
-CREATE POLICY "update for workspaces"
-ON base.workspaces
-AS PERMISSIVE
-FOR UPDATE
-TO authenticated
-USING (
-  (SELECT base.user_has_permissions(ARRAY['workspaces.update'::text]) AS user_has_permissions)
-);
-```
-
-### Users
-
-#### `select for users`
-Allows users with the `users.read` permission to select from the `users` table.
-
-```sql
-CREATE POLICY "select for users"
-ON base.users
-AS PERMISSIVE
-FOR SELECT
-TO authenticated
-USING (
-  (SELECT base.user_has_permissions(ARRAY['users.read'::text]) AS user_has_permissions)
-);
-```
-
-#### `update for users`
-Allows users with the `users.update` permission to update the `users` table, or allows users to update their own records.
-
-```sql
-CREATE POLICY "update for users"
-ON base.users
-AS PERMISSIVE
-FOR UPDATE
-TO authenticated
-USING (
-  (SELECT base.user_has_permissions(ARRAY['users.update'::text]) AS user_has_permissions) OR (id = (SELECT auth.uid() AS uid))
-);
-```
-
-### Workspace Users
-
-#### `workspace isolation policy`
-Restricts access to workspace users based on the workspace ID in the JWT.
+Restricts access to workspaces based on the user's workspace_id in their JWT token.
 
 ```sql
 CREATE POLICY "workspace isolation policy"
-ON base.workspace_users
-AS RESTRICTIVE
-TO authenticated
-USING (workspace_id = (((SELECT auth.jwt())  -> 'app_metadata')::jsonb ->> 'workspace_id')::uuid);
+ON base.workspaces
+as RESTRICTIVE
+to authenticated
+USING (id = (((SELECT auth.jwt()) -> 'app_metadata')::jsonb ->> 'workspace_id')::uuid);
 ```
 
-#### `select for only workspace users`
-Allows users with the `users.read` permission to select from the `workspace_users` table.
+#### Select for Workspaces
+
+Allows authenticated users with 'workspaces.read' permission to select workspaces.
 
 ```sql
-CREATE POLICY "select for only workspace users"
-ON base.workspace_users
-AS PERMISSIVE
-FOR SELECT
-TO authenticated
-USING (
-  (SELECT base.user_has_permissions(ARRAY['users.read'::text]) AS user_has_permissions)
+create policy "select for workspaces"
+on "base"."workspaces"
+as PERMISSIVE
+for SELECT
+to authenticated
+using (
+ ( SELECT base.user_has_permissions(ARRAY['workspaces.read'::text]) AS user_has_permissions)
 );
 ```
 
-#### `insert for workspace users`
-Allows users with the `users.create` permission to insert into the `workspace_users` table.
+#### Update for Workspaces
+
+Allows authenticated users with 'workspaces.update' permission to update workspaces.
 
 ```sql
-CREATE POLICY "insert for workspace users"
-ON base.workspace_users
-AS PERMISSIVE
-FOR INSERT
-TO authenticated
+create policy "update for workspaces"
+on "base"."workspaces"
+as PERMISSIVE
+for UPDATE
+to authenticated
+using (
+ ( SELECT base.user_has_permissions(ARRAY['workspaces.update'::text]) AS user_has_permissions)
+);
+```
+
+#### Insert for Workspaces
+
+Allows only service_role to insert new workspaces.
+
+```sql
+create policy "insert for workspaces"
+on "base"."workspaces"
+as PERMISSIVE
+for INSERT
+to service_role
 WITH CHECK (
-  (SELECT base.user_has_permissions(ARRAY['users.create'::text]) AS user_has_permissions)
+ true
 );
 ```
 
-#### `update for workspace users or self`
-Allows users with the `users.update` permission to update the `workspace_users` table, or allows users to update their own records.
+### Users Policies
+
+#### Select for Users
+
+Allows authenticated users with 'users.read' permission to select users.
 
 ```sql
-CREATE POLICY "update for workspace users or self"
+create policy "select for users"
+on "base"."users"
+as PERMISSIVE
+for SELECT
+to authenticated
+using (
+ ( SELECT base.user_has_permissions(ARRAY['users.read'::text]) AS user_has_permissions)
+);
+```
+
+#### Update for Users
+
+Allows authenticated users with 'users.update' permission or the user themselves to update user information.
+
+```sql
+create policy "update for users"
+on "base"."users"
+as PERMISSIVE
+for UPDATE
+to authenticated
+using (
+ ( SELECT base.user_has_permissions(ARRAY['users.update'::text]) AS user_has_permissions) OR (id = ( SELECT auth.uid() AS uid))
+);
+```
+
+### Workspace Users Policies
+
+#### Workspace Isolation Policy
+
+Restricts access to workspace users based on the user's workspace_id in their JWT token.
+
+```sql
+CREATE POLICY "workspace isolation policy"
 ON base.workspace_users
-AS PERMISSIVE
-FOR UPDATE
-TO authenticated
-USING (
-  (SELECT base.user_has_permissions(ARRAY['users.update'::text]) AS user_has_permissions) OR (user_id = (SELECT auth.uid() AS uid))
+as RESTRICTIVE
+to authenticated
+USING (workspace_id = (((SELECT auth.jwt()) -> 'app_metadata')::jsonb ->> 'workspace_id')::uuid);
+```
+
+#### Select for Workspace Users
+
+Allows authenticated users with 'users.read' permission to select workspace users.
+
+```sql
+create policy "select for only workspace users"
+on "base"."workspace_users"
+as PERMISSIVE
+for SELECT
+to authenticated
+using (
+ ( SELECT base.user_has_permissions(ARRAY['users.read'::text]) AS user_has_permissions)
 );
 ```
 
-#### `delete for workspace users or self`
-Allows users with the `users.delete` permission to delete from the `workspace_users` table, or allows users to delete their own records.
+#### Insert for Workspace Users
+
+Allows authenticated users with 'users.create' permission to insert new workspace users.
 
 ```sql
-CREATE POLICY "delete for workspace users or self"
-ON base.workspace_users
-AS PERMISSIVE
-FOR DELETE
-TO authenticated
-USING (
-  (SELECT base.user_has_permissions(ARRAY['users.delete'::text]) AS user_has_permissions) OR (user_id = (SELECT auth.uid() AS uid))
+create policy "insert for workspace users"
+on "base"."workspace_users"
+as PERMISSIVE
+for INSERT
+to authenticated
+with check (
+ ( SELECT base.user_has_permissions(ARRAY['users.create'::text]) AS user_has_permissions)
 );
 ```
 
-### Workspace User Permissions
+#### Update for Workspace Users
 
-#### `select for workspace user permissions to supabase_auth_admin`
-Allows the `supabase_auth_admin` role to select from the `workspace_user_permissions` table without any restrictions.
+Allows authenticated users with 'users.update' permission or the user themselves to update workspace user information.
 
 ```sql
-CREATE POLICY "select for workspace user permissions to supabase_auth_admin"
-ON base.workspace_user_permissions
-AS PERMISSIVE
-FOR SELECT
-TO supabase_auth_admin
-USING (true);
+create policy "update for workspace users or self"
+on "base"."workspace_users"
+as PERMISSIVE
+for UPDATE
+to authenticated
+using (
+ ( SELECT base.user_has_permissions(ARRAY['users.update'::text]) AS user_has_permissions) OR (user_id = ( SELECT auth.uid() AS uid))
+);
 ```
 
-## Usage
+#### Delete for Workspace Users
 
-These policies ensure that only authenticated users with the appropriate permissions can access and modify data in the `workspaces`, `users`, `workspace_users`, and `workspace_user_permissions` tables. The `user_has_permissions` function is used extensively to verify user permissions dynamically, providing a robust and flexible access control mechanism.
+Allows authenticated users with 'users.delete' permission or the user themselves to delete workspace user information.
 
+```sql
+create policy "delete for workspace users or self"
+on "base"."workspace_users"
+as PERMISSIVE
+for DELETE
+to authenticated
+using (
+ ( SELECT base.user_has_permissions(ARRAY['users.delete'::text]) AS user_has_permissions) OR (user_id = ( SELECT auth.uid() AS uid))
+);
+```
 
+### Workspace User Permissions Policies
+
+#### Select for Workspace User Permissions
+
+Allows supabase_auth_admin to select workspace user permissions.
+
+```sql
+create policy "select for workspace user permissions to supabase_auth_admin"
+on "base"."workspace_user_permissions"
+as PERMISSIVE
+for SELECT
+to supabase_auth_admin
+using (
+ true
+);
+```
