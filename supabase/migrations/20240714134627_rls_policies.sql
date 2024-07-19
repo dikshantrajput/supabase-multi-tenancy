@@ -50,6 +50,15 @@ using (
   ( SELECT base.user_has_permissions(ARRAY['workspaces.update'::text]) AS user_has_permissions)
 );
 
+-- insert on workspaces should only be done from an authentic source i.e. service_role in supabase
+create policy "insert for workspaces"
+on "base"."workspaces"
+as PERMISSIVE
+for INSERT
+to service_role
+WITH CHECK (
+  true
+);
 
 
 -- users policies

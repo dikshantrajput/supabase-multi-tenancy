@@ -16,6 +16,7 @@ ALTER TABLE
   base.workspaces ENABLE ROW LEVEL SECURITY;
 
 GRANT ALL ON base.workspaces to authenticated;
+GRANT INSERT ON base.workspaces TO service_role;
 
 -- workspaces table end
 -- users table start
