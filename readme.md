@@ -44,7 +44,7 @@ This project implements a scalable multi-tenant architecture using Supabase and 
 
 ### User Setup
 
-Ensure each user has a `workspace_id` in the `app_metadata` JSONB. Update this from your application using supabase admin instance when creating a user:
+Ensure each user has a `workspace_id` in the `app_metadata` JSONB. Update this from your application using supabase service_role admin instance when creating a user:
 
 ```javascript
 const supabaseServiceRoleInstance = createClient(SUPABASE_API_URL, SERVICE_ROLE_KEY, {
@@ -58,6 +58,10 @@ await supabaseServiceRoleInstance.auth.admin.updateUserById(userId, {
   },
 });
 ```
+
+## Adding New Workspace
+
+New workspace can only be created using supabase service_role.
 
 ## Adding New Tables
 
