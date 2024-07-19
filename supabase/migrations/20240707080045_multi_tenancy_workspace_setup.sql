@@ -105,17 +105,18 @@ GRANT ALL ON base.workspace_user_permissions TO authenticated;
 
 -- workspace_user_permissions table end
 -- workspace_resource_usage table start
-CREATE TABLE base.workspace_resource_usage (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  workspace_id UUID NOT NULL,
-  storage_used BIGINT DEFAULT 0,
-  api_calls_count BIGINT DEFAULT 0,
-  created_at TIMESTAMP DEFAULT now(),
-  updated_at TIMESTAMP DEFAULT now(),
-  CONSTRAINT fk_workspace FOREIGN KEY (workspace_id) REFERENCES base.workspaces (id) ON DELETE CASCADE ON UPDATE CASCADE
-);
+-- CREATE TABLE base.workspace_resource_usage (
+--   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--   workspace_id UUID NOT NULL,
+--   storage_used BIGINT DEFAULT 0,
+--   api_calls_count BIGINT DEFAULT 0,
+--   created_at TIMESTAMP DEFAULT now(),
+--   updated_at TIMESTAMP DEFAULT now(),
+--   CONSTRAINT fk_workspace FOREIGN KEY (workspace_id) REFERENCES base.workspaces (id) ON DELETE CASCADE ON UPDATE CASCADE
+-- );
 
--- workspace_resource_usage table end
-COMMENT ON COLUMN base.workspace_resource_usage.storage_used IS 'Storage usage in gbs/mbs';
-ALTER TABLE
-  base.workspace_resource_usage ENABLE ROW LEVEL SECURITY;
+-- -- workspace_resource_usage table end
+-- COMMENT ON COLUMN base.workspace_resource_usage.storage_used IS 'Storage usage in gbs/mbs';
+-- ALTER TABLE
+--   base.workspace_resource_usage ENABLE ROW LEVEL SECURITY;
+-- GRANT SELECT ON base.workspace_resource_usage TO service_role;

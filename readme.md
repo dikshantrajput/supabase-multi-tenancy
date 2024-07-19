@@ -7,8 +7,8 @@ This project implements a scalable multi-tenant architecture using Supabase and 
 - **Multiple Tenants (Workspaces)**: Support for multiple tenants with data isolation.
 - **Row Level Security (RLS)**: Comprehensive setup with scalable policies for access control.
 - **Tenant Data Isolation**: Ensures data separation between different tenants.
-- **Tenant Resource Usage Tracking**: Table to monitor resource usage per tenant.
 - **Supabase Auth Integration**: Hook for adding user tenant permissions.
+- **Tenant Resource Usage Tracking**: Table to monitor resource usage per tenant (WIP).
 
 ## Database Schema
 
@@ -67,6 +67,7 @@ When creating new tables, follow this [guide](docs/new-table.md) for implementin
 
 - Support for users belonging to multiple tenants
 - Implementation of unit tests
+- Policies for `workspace_resource_usage` table
 - Functionality to seed sample data
 
 ## Contributing

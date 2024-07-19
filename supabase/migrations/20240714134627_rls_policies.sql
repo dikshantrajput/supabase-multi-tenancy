@@ -142,3 +142,14 @@ to supabase_auth_admin
 using (
   true
 );
+
+
+-- workspace_resource_usage policies
+-- create policy "select for workspace_resource_usage to service_role"
+-- on "base"."workspace_user_permissions"
+-- as PERMISSIVE
+-- for SELECT
+-- to service_role
+-- using (
+--   true
+-- );
