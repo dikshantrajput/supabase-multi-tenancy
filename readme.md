@@ -76,4 +76,4 @@ Contributions are welcome! Please refer to our contributing guidelines for more 
 
 ---
 
-For more detailed information on RLS policies, functions, and specific implementation details, please refer to the project documentation.
+For more detailed information on RLS policies, functions, and specific implementation details, please refer to this [guide](docs/rls.md).
